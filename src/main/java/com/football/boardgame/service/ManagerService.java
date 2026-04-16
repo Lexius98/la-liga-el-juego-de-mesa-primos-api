@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +24,13 @@ public class ManagerService {
         return managerRepository.findAll().stream()
                 .map(managerMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ManagerDTO getManagerById(UUID id) {
+        Manager manager = managerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Manager not found: " + id));
+        return managerMapper.toDto(manager);
     }
 
     @Transactional

@@ -28,5 +28,11 @@ public class ManagerDTO {
     public static class GlobalStatsDTO {
         private Integer matches_played;
         private Integer competitions_won;
+        private Integer wins;
+        private Integer draws;
+        private Integer losses;
+        private Integer goals_for;
+        private Integer goals_against;
     }
 }
+

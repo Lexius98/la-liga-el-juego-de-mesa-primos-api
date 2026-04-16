@@ -38,4 +38,24 @@ public class Manager extends BaseEntity {
     @Builder.Default
     @Column(name = "competitions_won")
     private Integer competitionsWon = 0;
+
+    @Builder.Default
+    @Column(name = "wins")
+    private Integer wins = 0;
+
+    @Builder.Default
+    @Column(name = "draws")
+    private Integer draws = 0;
+
+    @Builder.Default
+    @Column(name = "losses")
+    private Integer losses = 0;
+
+    @Builder.Default
+    @Column(name = "goals_for")
+    private Integer goalsFor = 0;
+
+    @Builder.Default
+    @Column(name = "goals_against")
+    private Integer goalsAgainst = 0;
 }
