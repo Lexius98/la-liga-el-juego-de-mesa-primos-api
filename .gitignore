@@ -1,0 +1,29 @@
+# Node / React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+dist/
+build/
+
+# Java / Gradle / Android
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.gradle/
+build/
+out/
+.idea/
+*.log
+
+# Configuración local sensible
+target/classes/config/google/credentials.json
+src/main/resources/config/google/credentials.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: football-db
+    environment:
+      POSTGRES_DB: football_db
+      POSTGRES_USER: football_user
+      POSTGRES_PASSWORD: football_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U football_user -d football_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: football-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    name: postgres_data
