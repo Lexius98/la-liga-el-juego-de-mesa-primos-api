@@ -22,7 +22,7 @@ public class SeasonDTO {
     private List<ParticipantDTO> participants;
     private CurrentPhaseDTO current_phase;
     private UUID game_version_id;
-    private String lobby_code;
+    private String lobbyCode;
 
     @Data
     @Builder

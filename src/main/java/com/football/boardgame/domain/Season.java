@@ -49,6 +49,14 @@ public class Season extends BaseEntity {
     @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SeasonMembership> memberships = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Competition> competitions = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Team> teams = new ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "game_edition_id")
     private GameEdition gameEdition;

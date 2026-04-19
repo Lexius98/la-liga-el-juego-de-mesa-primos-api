@@ -6,9 +6,11 @@ import com.football.boardgame.domain.Season;
 import com.football.boardgame.domain.SeasonMembership;
 import com.football.boardgame.domain.Standings;
 import com.football.boardgame.domain.Team;
+import com.football.boardgame.dto.LobbyMemberDTO;
 import com.football.boardgame.dto.MatchDTO;
 import com.football.boardgame.dto.RoundAdvanceDTO;
 import com.football.boardgame.dto.SeasonDTO;
+import com.football.boardgame.mapper.LobbyMapper;
 import com.football.boardgame.mapper.MatchMapper;
 import com.football.boardgame.mapper.SeasonMapper;
 import com.football.boardgame.repository.CompetitionRepository;
@@ -54,11 +56,58 @@ public class SeasonService {
     private final MatchSimulatorService matchSimulatorService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    private final LobbyMapper lobbyMapper;
+
     @Transactional(readOnly = true)
     public List<SeasonDTO> getAllSeasons() {
         return seasonRepository.findAll().stream()
                 .map(seasonMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public SeasonDTO getSeasonByLobbyCode(String lobbyCode) {
+        return seasonRepository.findByLobbyCode(lobbyCode)
+                .map(seasonMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Season not found for code: " + lobbyCode));
+    }
+
+    @Transactional(readOnly = true)
+    public List<LobbyMemberDTO> getLobbyMembers(UUID seasonId) {
+        return membershipRepository.findBySeasonId(seasonId).stream()
+                .map(lobbyMapper::toLobbyDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void joinSeason(UUID seasonId, UUID managerId, UUID teamId) {
+        Season season = seasonRepository.findById(seasonId)
+                .orElseThrow(() -> new RuntimeException("Season not found"));
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
+        Team team = teamId != null ? teamRepository.findById(teamId).orElse(null) : null;
+
+        SeasonMembership membership = membershipRepository.findBySeasonId(seasonId).stream()
+                .filter(m -> m.getManager().getId().equals(managerId))
+                .findFirst()
+                .orElse(SeasonMembership.builder()
+                        .season(season)
+                        .manager(manager)
+                        .build());
+
+        membership.setTeam(team);
+        membership.setStatus(team != null ? SeasonMembership.MembershipStatus.READY : SeasonMembership.MembershipStatus.JOINED);
+        membership.setJoinedAt(LocalDateTime.now());
+
+        membershipRepository.save(membership);
+
+        // Broadcast update to all lobby subscribers
+        broadcastLobbyUpdate(seasonId);
+    }
+
+    private void broadcastLobbyUpdate(UUID seasonId) {
+        List<LobbyMemberDTO> members = getLobbyMembers(seasonId);
+        messagingTemplate.convertAndSend("/topic/season/" + seasonId + "/lobby", members);
     }
 
     @Transactional
@@ -80,11 +129,8 @@ public class SeasonService {
             season.setStatus(Season.SeasonStatus.DRAFT);
         }
         
-        // Generate a lobby code if it's LOBBY status (or always for future use)
-        // For now, let's just use a simple random 6-char code if status is DRAFT/LOBBY
-        if (season.getStatus() == Season.SeasonStatus.DRAFT || season.getStatus() == Season.SeasonStatus.LOBBY) {
-            // Placeholder: implement lobby code generation logic if needed
-        }
+        // Generate a lobby code for all new seasons
+        season.setLobbyCode(generateLobbyCode());
 
         Season savedSeason = seasonRepository.save(season);
 
@@ -341,5 +387,9 @@ public class SeasonService {
             Map.of("type", "ROUND_ADVANCED", "data", result));
 
         return result;
+    }
+
+    private String generateLobbyCode() {
+        return java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 }
