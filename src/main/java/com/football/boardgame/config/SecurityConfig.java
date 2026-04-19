@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/managers/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll()
                 .requestMatchers("/api/clubs/**").permitAll()
-                .requestMatchers("/api/editions/**").permitAll()
+                .requestMatchers("/api/editions/**").permitAll()  // incluye /cards, /bulk, /learn
                 .requestMatchers("/api/teams/**").permitAll()
                 .requestMatchers("/api/matches/**").permitAll()
                 .anyRequest().authenticated()

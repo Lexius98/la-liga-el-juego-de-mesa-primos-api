@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface ManagerMapper {
 
     @Mapping(target = "teamIds", ignore = true)
-    @Mapping(target = "role", expression = "java(manager.getRole() != null ? manager.getRole().name() : \"PLAYER\")")
+    @Mapping(target = "roles", expression = "java(manager.getRoles() == null ? java.util.List.of(\"PLAYER\") : manager.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toList()))")
     @Mapping(target = "global_stats.matches_played", source = "matchesPlayed")
     @Mapping(target = "global_stats.competitions_won", source = "competitionsWon")
     @Mapping(target = "global_stats.wins", source = "wins")
@@ -19,7 +19,7 @@ public interface ManagerMapper {
     @Mapping(target = "global_stats.goals_against", source = "goalsAgainst")
     ManagerDTO toDto(Manager manager);
 
-    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     @Mapping(target = "matchesPlayed", source = "global_stats.matches_played")
     @Mapping(target = "competitionsWon", source = "global_stats.competitions_won")
     @Mapping(target = "wins", source = "global_stats.wins")
