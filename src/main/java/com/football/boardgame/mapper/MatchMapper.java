@@ -10,7 +10,9 @@ public interface MatchMapper {
 
     @Mapping(target = "competitionId", source = "competition.id")
     @Mapping(target = "homeTeamId", source = "homeTeam.id")
+    @Mapping(target = "homeTeamName", source = "homeTeam.name")
     @Mapping(target = "awayTeamId", source = "awayTeam.id")
+    @Mapping(target = "awayTeamName", source = "awayTeam.name")
     MatchDTO toDto(Match match);
 
     @Mapping(target = "competition", ignore = true)

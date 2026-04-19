@@ -4,11 +4,15 @@ import com.football.boardgame.domain.Competition;
 import com.football.boardgame.domain.Season;
 import com.football.boardgame.domain.SeasonMembership;
 import com.football.boardgame.domain.Standings;
+import com.football.boardgame.domain.Team;
+import com.football.boardgame.dto.MatchDTO;
 import com.football.boardgame.dto.SeasonDTO;
+import com.football.boardgame.mapper.MatchMapper;
 import com.football.boardgame.mapper.SeasonMapper;
 import com.football.boardgame.repository.CompetitionRepository;
 import com.football.boardgame.repository.GameEditionRepository;
 import com.football.boardgame.repository.ManagerRepository;
+import com.football.boardgame.repository.MatchRepository;
 import com.football.boardgame.repository.SeasonMembershipRepository;
 import com.football.boardgame.repository.SeasonRepository;
 import com.football.boardgame.repository.StandingsRepository;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,6 +43,9 @@ public class SeasonService {
     private final CompetitionRepository competitionRepository;
     private final StandingsRepository standingsRepository;
     private final GameEditionRepository gameEditionRepository;
+    private final MatchRepository matchRepository;
+    private final MatchMapper matchMapper;
+    private final FixtureGeneratorService fixtureGenerator;
 
     @Transactional(readOnly = true)
     public List<SeasonDTO> getAllSeasons() {
@@ -161,5 +169,73 @@ public class SeasonService {
     @Transactional
     public void deleteSeason(UUID id) {
         seasonRepository.deleteById(id);
+    }
+
+    // ── Fixture (Issue #7) ────────────────────────────────────────────────────
+
+    /**
+     * Genera el fixture de liga Round-Robin (ida + vuelta) para la temporada.
+     * Se llama al final de la pretemporada, cuando la temporada ya está ACTIVE.
+     *
+     * @throws IllegalStateException si el fixture ya existe o la temporada no está ACTIVE
+     */
+    @Transactional
+    public List<MatchDTO> generateFixture(UUID seasonId) {
+        Season season = seasonRepository.findById(seasonId)
+                .orElseThrow(() -> new RuntimeException("Season not found: " + seasonId));
+
+        if (season.getStatus() != Season.SeasonStatus.ACTIVE) {
+            throw new IllegalStateException(
+                "El fixture solo puede generarse con la temporada en estado ACTIVE. Estado actual: "
+                + season.getStatus());
+        }
+
+        // Obtener la competición de liga
+        Competition league = competitionRepository.findBySeasonId(seasonId).stream()
+                .filter(c -> c.getType() == Competition.CompetitionType.LEAGUE)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Liga no encontrada para la temporada: " + seasonId));
+
+        // Evitar doble generación
+        if (matchRepository.existsByCompetitionId(league.getId())) {
+            throw new IllegalStateException(
+                "El fixture ya ha sido generado para esta temporada. Jornadas existentes: " +
+                matchRepository.findByCompetitionId(league.getId()).size() + " partidos.");
+        }
+
+        // Equipos de los managers participantes
+        List<Team> teams = membershipRepository.findBySeasonId(seasonId).stream()
+                .map(SeasonMembership::getTeam)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // Generar y persistir
+        List<com.football.boardgame.domain.Match> matches = fixtureGenerator.generate(
+                teams, league, season.getStartDate());
+        matchRepository.saveAll(matches);
+
+        // Persistir winterBreakAfterRound en la competition
+        competitionRepository.save(league);
+
+        log.info("[SeasonService] Fixture generado para temporada '{}': {} partidos en {} jornadas",
+                season.getName(), matches.size(), 2 * (teams.size() - 1));
+
+        return matches.stream().map(matchMapper::toDto).collect(Collectors.toList());
+    }
+
+    /** Devuelve el fixture completo de la temporada ordenado por jornada. */
+    @Transactional(readOnly = true)
+    public List<MatchDTO> getFixture(UUID seasonId) {
+        return matchRepository.findFixtureBySeason(seasonId).stream()
+                .map(matchMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /** Devuelve los partidos de una jornada concreta. */
+    @Transactional(readOnly = true)
+    public List<MatchDTO> getFixtureByRound(UUID seasonId, int round) {
+        return matchRepository.findFixtureBySeasonAndRound(seasonId, round).stream()
+                .map(matchMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

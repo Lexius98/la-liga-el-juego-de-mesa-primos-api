@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -37,6 +38,19 @@ public class Competition extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CompetitionStatus status;
+
+    /** Número máximo de equipos. Siempre par. Default 20. */
+    @Builder.Default
+    @Column(name = "max_teams")
+    private Integer maxTeams = 20;
+
+    /**
+     * Jornada tras la que se produce la pausa invernal.
+     * Se calcula al generar el fixture: maxTeams - 1.
+     * Null hasta que el fixture sea generado.
+     */
+    @Column(name = "winter_break_after_round")
+    private Integer winterBreakAfterRound;
 
     public enum CompetitionType {
         LEAGUE, KNOCKOUT
