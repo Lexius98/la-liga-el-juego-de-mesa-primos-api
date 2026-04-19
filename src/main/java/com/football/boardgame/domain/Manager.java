@@ -2,6 +2,8 @@ package com.football.boardgame.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +32,21 @@ public class Manager extends BaseEntity {
 
     @Column
     private String avatarUrl;
+
+    /**
+     * Rol del manager en el sistema.
+     * ADMIN  → puede gestionar ediciones, roles y toda la configuracion.
+     * SCANNER → puede escanear y registrar cartas en el catalogo de una edicion.
+     * PLAYER  → rol por defecto, solo puede participar en temporadas.
+     */
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ManagerRole role = ManagerRole.PLAYER;
+
+    public enum ManagerRole {
+        ADMIN, SCANNER, PLAYER
+    }
 
     @Builder.Default
     @Column(name = "matches_played")

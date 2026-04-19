@@ -18,6 +18,7 @@ public class ManagerDTO {
     private String email;
     private String avatarUrl;
     private String name;
+    private String role; // "ADMIN" | "SCANNER" | "PLAYER"
     private List<UUID> teamIds;
     private GlobalStatsDTO global_stats;
 

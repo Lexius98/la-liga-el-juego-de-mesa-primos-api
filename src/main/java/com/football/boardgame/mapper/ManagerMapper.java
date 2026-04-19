@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface ManagerMapper {
 
     @Mapping(target = "teamIds", ignore = true)
+    @Mapping(target = "role", expression = "java(manager.getRole() != null ? manager.getRole().name() : \"PLAYER\")")
     @Mapping(target = "global_stats.matches_played", source = "matchesPlayed")
     @Mapping(target = "global_stats.competitions_won", source = "competitionsWon")
     @Mapping(target = "global_stats.wins", source = "wins")
@@ -18,6 +19,7 @@ public interface ManagerMapper {
     @Mapping(target = "global_stats.goals_against", source = "goalsAgainst")
     ManagerDTO toDto(Manager manager);
 
+    @Mapping(target = "role", ignore = true)
     @Mapping(target = "matchesPlayed", source = "global_stats.matches_played")
     @Mapping(target = "competitionsWon", source = "global_stats.competitions_won")
     @Mapping(target = "wins", source = "global_stats.wins")
