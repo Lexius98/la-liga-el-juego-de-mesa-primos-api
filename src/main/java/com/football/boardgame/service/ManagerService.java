@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,12 +47,35 @@ public class ManagerService {
         return result;
     }
 
-    /** Cambia el rol de un manager. Solo puede llamarlo un ADMIN (enforced en controller). */
+    /** Sustituye todos los roles del manager por la lista indicada. */
     @Transactional
-    public ManagerDTO updateRole(UUID managerId, String role) {
+    public ManagerDTO setRoles(UUID managerId, Set<String> roleNames) {
         Manager manager = managerRepository.findById(managerId)
                 .orElseThrow(() -> new RuntimeException("Manager not found: " + managerId));
-        manager.setRole(Manager.ManagerRole.valueOf(role.toUpperCase()));
+        Set<Manager.ManagerRole> parsed = roleNames.stream()
+                .map(r -> Manager.ManagerRole.valueOf(r.toUpperCase()))
+                .collect(java.util.stream.Collectors.toSet());
+        if (parsed.isEmpty()) parsed.add(Manager.ManagerRole.PLAYER); // siempre al menos PLAYER
+        manager.setRoles(parsed);
+        return managerMapper.toDto(managerRepository.save(manager));
+    }
+
+    /** Añade un rol al manager (sin quitar los que ya tiene). */
+    @Transactional
+    public ManagerDTO addRole(UUID managerId, String role) {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found: " + managerId));
+        manager.getRoles().add(Manager.ManagerRole.valueOf(role.toUpperCase()));
+        return managerMapper.toDto(managerRepository.save(manager));
+    }
+
+    /** Quita un rol del manager (siempre queda al menos PLAYER). */
+    @Transactional
+    public ManagerDTO removeRole(UUID managerId, String role) {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found: " + managerId));
+        manager.getRoles().remove(Manager.ManagerRole.valueOf(role.toUpperCase()));
+        if (manager.getRoles().isEmpty()) manager.getRoles().add(Manager.ManagerRole.PLAYER);
         return managerMapper.toDto(managerRepository.save(manager));
     }
 }

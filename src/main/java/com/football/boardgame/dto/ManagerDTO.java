@@ -18,7 +18,8 @@ public class ManagerDTO {
     private String email;
     private String avatarUrl;
     private String name;
-    private String role; // "ADMIN" | "SCANNER" | "PLAYER"
+    /** Lista de roles del manager: "ADMIN", "SCANNER", "PLAYER" (puede tener varios) */
+    private List<String> roles;
     private List<UUID> teamIds;
     private GlobalStatsDTO global_stats;
 
