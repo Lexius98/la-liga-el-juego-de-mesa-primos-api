@@ -10,6 +10,7 @@ public interface StandingsMapper {
 
     @Mapping(target = "competitionId", source = "competition.id")
     @Mapping(target = "teamId", source = "team.id")
+    @Mapping(target = "teamName", source = "team.name")
     @Mapping(target = "matches_played", source = "matchesPlayed")
     @Mapping(target = "goals_for", source = "goalsFor")
     @Mapping(target = "goals_against", source = "goalsAgainst")

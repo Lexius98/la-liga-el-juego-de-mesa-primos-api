@@ -26,4 +26,6 @@ public class MatchDTO {
     private UUID nextMatchId;
     /** Número de jornada. Pausa invernal tras jornada = maxTeams - 1. */
     private Integer round;
+    /** MANAGER = partido entre managers humanos | NPC = simulado */
+    private String matchType;
 }

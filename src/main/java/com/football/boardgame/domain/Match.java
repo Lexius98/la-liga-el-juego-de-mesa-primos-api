@@ -52,6 +52,11 @@ public class Match extends BaseEntity {
     private Integer round;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "match_type")
+    private MatchType matchType = MatchType.MANAGER;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;
 
@@ -63,5 +68,12 @@ public class Match extends BaseEntity {
 
     public enum MatchStatus {
         SCHEDULED, IN_PROGRESS, FINISHED, POSTPONED
+    }
+
+    public enum MatchType {
+        /** Partido entre dos managers humanos — resultado introducido manualmente */
+        MANAGER,
+        /** Partido entre equipos sin manager — simulado automáticamente al final de jornada */
+        NPC
     }
 }

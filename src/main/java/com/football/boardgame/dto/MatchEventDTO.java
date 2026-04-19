@@ -17,5 +17,9 @@ public class MatchEventDTO {
     private Integer minute;
     private String type;
     private UUID playerId;
+    private String playerName;
     private UUID assistPlayerId;
+    private UUID teamId;
+    /** Descripción del evento. Auto-generada o introducida manualmente. */
+    private String description;
 }

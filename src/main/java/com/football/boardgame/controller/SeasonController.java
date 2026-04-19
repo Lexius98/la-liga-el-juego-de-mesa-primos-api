@@ -2,6 +2,7 @@ package com.football.boardgame.controller;
 
 import com.football.boardgame.dto.MatchDTO;
 import com.football.boardgame.dto.SeasonDTO;
+import com.football.boardgame.service.MatchSimulatorService;
 import com.football.boardgame.service.SeasonService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class SeasonController {
 
     private final SeasonService seasonService;
+    private final MatchSimulatorService matchSimulatorService;
 
     @GetMapping
     public ResponseEntity<List<SeasonDTO>> getAllSeasons() {
@@ -79,5 +81,17 @@ public class SeasonController {
             @PathVariable("id") UUID id,
             @PathVariable("round") int round) {
         return ResponseEntity.ok(seasonService.getFixtureByRound(id, round));
+    }
+
+    /**
+     * Simula todos los partidos NPC de una jornada (al final de la misma).
+     * Solo simula partidos matchType=NPC y status=SCHEDULED.
+     * POST /api/seasons/{id}/simulate-round/{round}
+     */
+    @PostMapping("/{id}/simulate-round/{round}")
+    public ResponseEntity<List<MatchDTO>> simulateRound(
+            @PathVariable("id") UUID id,
+            @PathVariable("round") int round) {
+        return ResponseEntity.ok(matchSimulatorService.simulateRound(id, round));
     }
 }

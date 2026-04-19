@@ -21,4 +21,13 @@ public interface MatchRepository extends JpaRepository<Match, UUID> {
     List<Match> findFixtureBySeasonAndRound(UUID seasonId, Integer round);
 
     boolean existsByCompetitionId(UUID competitionId);
+
+    /** Todos los partidos finalizados de una competición — para recalcular standings */
+    List<Match> findByCompetitionIdAndStatus(UUID competitionId, Match.MatchStatus status);
+
+    /** Partidos NPC de una jornada y season pendientes de simular */
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT m FROM Match m WHERE m.competition.season.id = :seasonId " +
+        "AND m.round = :round AND m.matchType = 'NPC' AND m.status = 'SCHEDULED'")
+    List<Match> findNpcMatchesToSimulate(UUID seasonId, Integer round);
 }
