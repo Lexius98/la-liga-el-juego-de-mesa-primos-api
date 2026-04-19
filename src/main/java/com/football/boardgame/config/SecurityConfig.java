@@ -29,6 +29,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").permitAll()
                 .requestMatchers("/api/clubs/**").permitAll()
                 .requestMatchers("/api/editions/**").permitAll()
+                .requestMatchers("/api/teams/**").permitAll()
+                .requestMatchers("/api/matches/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {

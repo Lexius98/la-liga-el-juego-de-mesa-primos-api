@@ -10,4 +10,7 @@ import java.util.UUID;
 @Repository
 public interface MatchRepository extends JpaRepository<Match, UUID> {
     List<Match> findByCompetitionId(UUID competitionId);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM Match m WHERE m.competition.season.id = :seasonId AND m.status = 'IN_PROGRESS'")
+    java.util.Optional<Match> findActiveMatchBySeason(UUID seasonId);
 }
