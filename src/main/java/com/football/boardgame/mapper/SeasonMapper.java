@@ -13,14 +13,14 @@ public interface SeasonMapper {
     @Mapping(target = "end_date", source = "endDate")
     @Mapping(target = "participants", source = "memberships")
     @Mapping(target = "game_version_id", source = "gameEdition.id")
-    @Mapping(target = "lobby_code", source = "lobbyCode")
+    @Mapping(target = "lobbyCode", source = "lobbyCode")
     @Mapping(target = "current_phase", ignore = true)
     SeasonDTO toDto(Season season);
 
     @Mapping(target = "endDate", source = "end_date")
     @Mapping(target = "memberships", ignore = true) // Handled in service
     @Mapping(target = "gameEdition", ignore = true) // Handled in service
-    @Mapping(target = "lobbyCode", source = "lobby_code")
+    @Mapping(target = "lobbyCode", source = "lobbyCode")
     Season toEntity(SeasonDTO dto);
 
     @Mapping(target = "manager_id", source = "manager.id")

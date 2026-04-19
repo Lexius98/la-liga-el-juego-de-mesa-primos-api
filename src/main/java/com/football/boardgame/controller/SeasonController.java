@@ -1,5 +1,7 @@
 package com.football.boardgame.controller;
 
+import com.football.boardgame.dto.JoinSeasonRequest;
+import com.football.boardgame.dto.LobbyMemberDTO;
 import com.football.boardgame.dto.MatchDTO;
 import com.football.boardgame.dto.RoundAdvanceDTO;
 import com.football.boardgame.dto.SeasonDTO;
@@ -41,6 +43,11 @@ public class SeasonController {
         return ResponseEntity.ok(seasonService.getSeasonById(id));
     }
 
+    @GetMapping("/by-code/{code}")
+    public ResponseEntity<SeasonDTO> getSeasonByCode(@PathVariable("code") String code) {
+        return ResponseEntity.ok(seasonService.getSeasonByLobbyCode(code));
+    }
+
     @PostMapping("/{id}")
     public ResponseEntity<SeasonDTO> updateSeason(@PathVariable("id") UUID id, @RequestBody SeasonDTO seasonDTO) {
         return ResponseEntity.ok(seasonService.updateSeason(id, seasonDTO));
@@ -49,6 +56,17 @@ public class SeasonController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSeason(@PathVariable("id") UUID id) {
         seasonService.deleteSeason(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/lobby")
+    public ResponseEntity<List<LobbyMemberDTO>> getLobbyMembers(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(seasonService.getLobbyMembers(id));
+    }
+
+    @PostMapping("/{id}/join")
+    public ResponseEntity<Void> joinSeason(@PathVariable("id") UUID id, @RequestBody JoinSeasonRequest request) {
+        seasonService.joinSeason(id, request.getManagerId(), request.getTeamId());
         return ResponseEntity.noContent().build();
     }
 
