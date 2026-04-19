@@ -47,6 +47,10 @@ public class Match extends BaseEntity {
     @Column(name = "away_score")
     private Integer awayScore = 0;
 
+    /** Número de jornada dentro de la competición (1 = primera, N-1 = fin de ida, 2*(N-1) = fin de vuelta) */
+    @Column(nullable = false)
+    private Integer round;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;
