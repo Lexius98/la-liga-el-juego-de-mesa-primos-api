@@ -29,6 +29,17 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getMatchesByCompetition(competitionId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<MatchDTO> getMatch(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(matchService.getMatchById(id));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<MatchDTO> getActiveMatch(@RequestParam("seasonId") UUID seasonId) {
+        MatchDTO active = matchService.getActiveMatchBySeason(seasonId);
+        return active != null ? ResponseEntity.ok(active) : ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}/result")
     public ResponseEntity<MatchDTO> updateResult(@PathVariable("id") UUID id, @RequestBody MatchDTO matchDTO) {
         return ResponseEntity.ok(matchService.updateMatchResult(id, matchDTO));

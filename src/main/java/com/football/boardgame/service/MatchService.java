@@ -11,6 +11,7 @@ import com.football.boardgame.repository.MatchEventRepository;
 import com.football.boardgame.repository.MatchRepository;
 import com.football.boardgame.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +28,27 @@ public class MatchService {
     private final PlayerRepository playerRepository;
     private final MatchMapper matchMapper;
     private final MatchEventMapper matchEventMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
     public List<MatchDTO> getMatchesByCompetition(UUID competitionId) {
         return matchRepository.findByCompetitionId(competitionId).stream()
                 .map(matchMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public MatchDTO getMatchById(UUID matchId) {
+        return matchRepository.findById(matchId)
+                .map(matchMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public MatchDTO getActiveMatchBySeason(UUID seasonId) {
+        return matchRepository.findActiveMatchBySeason(seasonId)
+                .map(matchMapper::toDto)
+                .orElse(null);
     }
 
     @Transactional
@@ -48,7 +64,12 @@ public class MatchService {
         }
         
         Match savedMatch = matchRepository.save(match);
-        return matchMapper.toDto(savedMatch);
+        MatchDTO resultDto = matchMapper.toDto(savedMatch);
+        
+        // Broadcast update to mobile apps
+        broadcastUpdate(savedMatch, "match_start", resultDto);
+        
+        return resultDto;
     }
 
     @Transactional
@@ -74,6 +95,25 @@ public class MatchService {
         }
         
         MatchEvent savedEvent = matchEventRepository.save(event);
-        return matchEventMapper.toDto(savedEvent);
+        MatchEventDTO resultDto = matchEventMapper.toDto(savedEvent);
+        
+        // Broadcast event to mobile apps
+        broadcastUpdate(match, "match_event", resultDto);
+        
+        return resultDto;
+    }
+
+    private void broadcastUpdate(Match match, String type, Object payload) {
+        if (match.getCompetition() != null && match.getCompetition().getSeason() != null) {
+            UUID seasonId = match.getCompetition().getSeason().getId();
+            String destination = "/topic/season/" + seasonId + "/lobby";
+            
+            // Format matching what the mobile app expects (LobbyMessage)
+            java.util.Map<String, Object> message = new java.util.HashMap<>();
+            message.put("type", type);
+            message.put("payload", payload);
+            
+            messagingTemplate.convertAndSend(destination, message);
+        }
     }
 }

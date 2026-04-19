@@ -13,6 +13,7 @@ import com.football.boardgame.repository.SeasonMembershipRepository;
 import com.football.boardgame.repository.SeasonRepository;
 import com.football.boardgame.repository.StandingsRepository;
 import com.football.boardgame.repository.TeamRepository;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
+// Hot-reload verification comment
 public class SeasonService {
 
     private final SeasonRepository seasonRepository;
@@ -46,6 +49,7 @@ public class SeasonService {
     @Transactional
     @org.springframework.lang.NonNull
     public SeasonDTO createSeason(SeasonDTO seasonDTO) {
+        log.info("Creating new season: {}", seasonDTO.getName());
         Season season = seasonMapper.toEntity(seasonDTO);
 
         // Load Game Edition if provided
