@@ -110,11 +110,16 @@ public class FixtureGeneratorService {
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private Match buildMatch(Team home, Team away, Competition competition, int round, LocalDateTime date) {
+        Match.MatchType type = (home.getManager() != null && away.getManager() != null)
+                ? Match.MatchType.MANAGER
+                : Match.MatchType.NPC;
+
         return Match.builder()
                 .homeTeam(home)
                 .awayTeam(away)
                 .competition(competition)
                 .round(round)
+                .matchType(type)
                 .status(Match.MatchStatus.SCHEDULED)
                 .matchDate(date)
                 .homeScore(0)

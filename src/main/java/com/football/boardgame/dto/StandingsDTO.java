@@ -15,6 +15,7 @@ public class StandingsDTO {
     private UUID id;
     private UUID competitionId;
     private UUID teamId;
+    private String teamName;
     private Integer matches_played;
     private Integer wins;
     private Integer draws;

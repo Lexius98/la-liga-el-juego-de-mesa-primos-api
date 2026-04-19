@@ -13,6 +13,7 @@ public interface MatchMapper {
     @Mapping(target = "homeTeamName", source = "homeTeam.name")
     @Mapping(target = "awayTeamId", source = "awayTeam.id")
     @Mapping(target = "awayTeamName", source = "awayTeam.name")
+    @Mapping(target = "matchType", expression = "java(match.getMatchType() != null ? match.getMatchType().name() : null)")
     MatchDTO toDto(Match match);
 
     @Mapping(target = "competition", ignore = true)

@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface StandingsRepository extends JpaRepository<Standings, UUID> {
     List<Standings> findByCompetitionIdOrderByPositionAsc(UUID competitionId);
+    List<Standings> findByCompetitionId(UUID competitionId);
+    java.util.Optional<Standings> findByCompetitionIdAndTeamId(UUID competitionId, UUID teamId);
 }
