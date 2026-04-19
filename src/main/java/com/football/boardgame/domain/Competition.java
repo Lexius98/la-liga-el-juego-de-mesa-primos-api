@@ -52,6 +52,15 @@ public class Competition extends BaseEntity {
     @Column(name = "winter_break_after_round")
     private Integer winterBreakAfterRound;
 
+    /**
+     * Jornada actualmente activa (la que los managers están jugando).
+     * El admin avanza manualmente al llamar a POST /seasons/{id}/matchdays/{round}/advance.
+     * 0 = fixture generado pero sin empezar, 1 = primera jornada activa, etc.
+     */
+    @Builder.Default
+    @Column(name = "current_round")
+    private Integer currentRound = 0;
+
     public enum CompetitionType {
         LEAGUE, KNOCKOUT
     }

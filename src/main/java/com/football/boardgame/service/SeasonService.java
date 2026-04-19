@@ -1,11 +1,13 @@
 package com.football.boardgame.service;
 
 import com.football.boardgame.domain.Competition;
+import com.football.boardgame.domain.Match;
 import com.football.boardgame.domain.Season;
 import com.football.boardgame.domain.SeasonMembership;
 import com.football.boardgame.domain.Standings;
 import com.football.boardgame.domain.Team;
 import com.football.boardgame.dto.MatchDTO;
+import com.football.boardgame.dto.RoundAdvanceDTO;
 import com.football.boardgame.dto.SeasonDTO;
 import com.football.boardgame.mapper.MatchMapper;
 import com.football.boardgame.mapper.SeasonMapper;
@@ -19,12 +21,14 @@ import com.football.boardgame.repository.StandingsRepository;
 import com.football.boardgame.repository.TeamRepository;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,6 +50,9 @@ public class SeasonService {
     private final MatchRepository matchRepository;
     private final MatchMapper matchMapper;
     private final FixtureGeneratorService fixtureGenerator;
+    private final StandingService standingService;
+    private final MatchSimulatorService matchSimulatorService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
     public List<SeasonDTO> getAllSeasons() {
@@ -237,5 +244,102 @@ public class SeasonService {
         return matchRepository.findFixtureBySeasonAndRound(seasonId, round).stream()
                 .map(matchMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    // ── B-017: Avance de jornada manual ─────────────────────────────────────
+
+    /**
+     * El host/admin cierra la jornada {@code round} y activa la siguiente.
+     * <ol>
+     *   <li>Verifica que todos los partidos MANAGER del round estén FINISHED.
+     *       Si quedan NPC SCHEDULED, los simula automáticamente.</li>
+     *   <li>Recalcula los standings de la liga.</li>
+     *   <li>Incrementa {@code currentRound} en la Competition.</li>
+     *   <li>Notifica vía STOMP al lobby.</li>
+     * </ol>
+     *
+     * @param seasonId ID de la temporada
+     * @param round    Jornada a cerrar
+     * @return Resumen del avance
+     * @throws IllegalStateException si hay partidos MANAGER sin finalizar
+     */
+    @Transactional
+    public RoundAdvanceDTO advanceRound(UUID seasonId, int round) {
+        Season season = seasonRepository.findById(seasonId)
+                .orElseThrow(() -> new RuntimeException("Season not found: " + seasonId));
+
+        Competition league = competitionRepository.findBySeasonId(seasonId).stream()
+                .filter(c -> c.getType() == Competition.CompetitionType.LEAGUE)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("League not found for season: " + seasonId));
+
+        List<Match> roundMatches = matchRepository.findFixtureBySeasonAndRound(seasonId, round);
+        if (roundMatches.isEmpty()) {
+            throw new IllegalStateException("No se encontraron partidos para la jornada " + round);
+        }
+
+        // 1. Validar que los partidos MANAGER estén finalizados
+        List<Match> managerPending = roundMatches.stream()
+                .filter(m -> m.getMatchType() == Match.MatchType.MANAGER)
+                .filter(m -> m.getStatus() != Match.MatchStatus.FINISHED)
+                .collect(Collectors.toList());
+
+        if (!managerPending.isEmpty()) {
+            throw new IllegalStateException(
+                "Hay " + managerPending.size() + " partido(s) de managers sin finalizar en la jornada " + round +
+                ". Verifica los resultados antes de avanzar.");
+        }
+
+        // 2. Simular NPCs pendientes si los hay
+        List<UUID> simulatedIds = new ArrayList<>();
+        List<Match> npcPending = roundMatches.stream()
+                .filter(m -> m.getMatchType() == Match.MatchType.NPC)
+                .filter(m -> m.getStatus() == Match.MatchStatus.SCHEDULED)
+                .collect(Collectors.toList());
+
+        if (!npcPending.isEmpty()) {
+            log.info("[B-017] Simulando {} partidos NPC de la jornada {}", npcPending.size(), round);
+            List<MatchDTO> simulated = matchSimulatorService.simulateRound(seasonId, round);
+            simulatedIds = simulated.stream().map(MatchDTO::getId).collect(Collectors.toList());
+        }
+
+        // 3. Recalcular standings
+        standingService.recalculateStandings(league.getId());
+
+        // 4. Calcular siguiente jornada
+        int totalRounds = (league.getMaxTeams() != null ? league.getMaxTeams() : 20) * 2 - 2;
+        int nextRound = round + 1;
+        boolean leagueFinished = nextRound > totalRounds;
+        boolean winterBreak = league.getWinterBreakAfterRound() != null &&
+                round == league.getWinterBreakAfterRound();
+
+        // 5. Actualizar la jornada activa en la Competition
+        league.setCurrentRound(leagueFinished ? 0 : nextRound);
+        if (leagueFinished) {
+            league.setStatus(Competition.CompetitionStatus.COMPLETED);
+        } else if (league.getStatus() == Competition.CompetitionStatus.UPCOMING) {
+            league.setStatus(Competition.CompetitionStatus.ACTIVE);
+        }
+        competitionRepository.save(league);
+
+        log.info("[B-017] Jornada {} cerrada. Siguiente: {}. Liga finalizada: {}",
+                round, nextRound, leagueFinished);
+
+        // 6. Notificar vía STOMP al lobby
+        RoundAdvanceDTO result = RoundAdvanceDTO.builder()
+                .closedRound(round)
+                .nextRound(leagueFinished ? 0 : nextRound)
+                .totalRounds(totalRounds)
+                .winterBreakNext(winterBreak)
+                .leagueFinished(leagueFinished)
+                .simulatedMatchIds(simulatedIds)
+                .competitionId(league.getId())
+                .build();
+
+        messagingTemplate.convertAndSend(
+            "/topic/season/" + seasonId + "/lobby",
+            Map.of("type", "ROUND_ADVANCED", "data", result));
+
+        return result;
     }
 }

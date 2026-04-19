@@ -1,6 +1,7 @@
 package com.football.boardgame.controller;
 
 import com.football.boardgame.dto.MatchDTO;
+import com.football.boardgame.dto.RoundAdvanceDTO;
 import com.football.boardgame.dto.SeasonDTO;
 import com.football.boardgame.service.MatchSimulatorService;
 import com.football.boardgame.service.SeasonService;
@@ -93,5 +94,19 @@ public class SeasonController {
             @PathVariable("id") UUID id,
             @PathVariable("round") int round) {
         return ResponseEntity.ok(matchSimulatorService.simulateRound(id, round));
+    }
+
+    // ── B-017: Avance de jornada manual ──────────────────────────────
+
+    /**
+     * El host cierra la jornada y activa la siguiente.
+     * Simula los NPC pendientes, recalcula standings y notifica va STOMP.
+     * POST /api/seasons/{id}/matchdays/{round}/advance
+     */
+    @PostMapping("/{id}/matchdays/{round}/advance")
+    public ResponseEntity<RoundAdvanceDTO> advanceRound(
+            @PathVariable("id") UUID id,
+            @PathVariable("round") int round) {
+        return ResponseEntity.ok(seasonService.advanceRound(id, round));
     }
 }
