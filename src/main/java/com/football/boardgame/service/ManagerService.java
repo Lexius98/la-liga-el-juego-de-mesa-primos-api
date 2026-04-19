@@ -44,4 +44,13 @@ public class ManagerService {
         }
         return result;
     }
+
+    /** Cambia el rol de un manager. Solo puede llamarlo un ADMIN (enforced en controller). */
+    @Transactional
+    public ManagerDTO updateRole(UUID managerId, String role) {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found: " + managerId));
+        manager.setRole(Manager.ManagerRole.valueOf(role.toUpperCase()));
+        return managerMapper.toDto(managerRepository.save(manager));
+    }
 }

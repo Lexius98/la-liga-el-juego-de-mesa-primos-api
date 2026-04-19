@@ -5,6 +5,7 @@ import com.football.boardgame.service.ManagerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -34,6 +36,22 @@ public class ManagerController {
     @PostMapping
     public ResponseEntity<ManagerDTO> createManager(@RequestBody ManagerDTO managerDTO) {
         return ResponseEntity.ok(managerService.createManager(managerDTO));
+    }
+
+    /**
+     * Cambia el rol de un manager.
+     * PATCH /api/managers/{id}/role
+     * Body: { "role": "ADMIN" | "SCANNER" | "PLAYER" }
+     */
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<ManagerDTO> updateRole(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        String role = body.get("role");
+        if (role == null || role.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(managerService.updateRole(id, role));
     }
 }
 
