@@ -53,6 +53,14 @@ public class Season extends BaseEntity {
     @JoinColumn(name = "game_edition_id")
     private GameEdition gameEdition;
 
+    /**
+     * Monotonically increasing counter incremented on each sync-checkpoint.
+     * Mobile clients use this to detect when season data has changed.
+     */
+    @Builder.Default
+    @Column(name = "sync_version", nullable = false)
+    private Long syncVersion = 0L;
+
     public enum SeasonStatus {
         DRAFT, LOBBY, ACTIVE, COMPLETED
     }

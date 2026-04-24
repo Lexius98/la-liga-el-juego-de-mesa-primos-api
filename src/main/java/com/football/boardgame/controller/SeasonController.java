@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -108,5 +109,17 @@ public class SeasonController {
             @PathVariable("id") UUID id,
             @PathVariable("round") int round) {
         return ResponseEntity.ok(seasonService.advanceRound(id, round));
+    }
+
+    // ── Issue #21: Sync Checkpoint ──────────────────────────────────
+
+    /**
+     * The Desktop host calls this to persist all pending state and notify
+     * connected mobile clients to refresh their caches.
+     * POST /api/seasons/{id}/sync-checkpoint
+     */
+    @PostMapping("/{id}/sync-checkpoint")
+    public ResponseEntity<Map<String, Object>> syncCheckpoint(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(seasonService.syncCheckpoint(id));
     }
 }

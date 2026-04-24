@@ -23,6 +23,7 @@ public class SeasonDTO {
     private CurrentPhaseDTO current_phase;
     private UUID game_version_id;
     private String lobby_code;
+    private Long sync_version;
 
     @Data
     @Builder

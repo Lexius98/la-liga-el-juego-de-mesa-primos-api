@@ -14,6 +14,7 @@ public interface SeasonMapper {
     @Mapping(target = "participants", source = "memberships")
     @Mapping(target = "game_version_id", source = "gameEdition.id")
     @Mapping(target = "lobby_code", source = "lobbyCode")
+    @Mapping(target = "sync_version", source = "syncVersion")
     @Mapping(target = "current_phase", ignore = true)
     SeasonDTO toDto(Season season);
 

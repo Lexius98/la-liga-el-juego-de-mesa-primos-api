@@ -342,4 +342,44 @@ public class SeasonService {
 
         return result;
     }
+
+    // ── Issue #21: Sync Checkpoint ─────────────────────────────────────────
+
+    /**
+     * Creates a synchronization checkpoint for the given season.
+     * <ol>
+     *   <li>Increments the {@code syncVersion} counter.</li>
+     *   <li>Flushes all pending changes to the database.</li>
+     *   <li>Broadcasts a STOMP event so connected mobile clients refresh their caches.</li>
+     * </ol>
+     *
+     * @param seasonId ID of the season
+     * @return Map with checkpoint metadata (syncVersion, timestamp)
+     */
+    @Transactional
+    public Map<String, Object> syncCheckpoint(UUID seasonId) {
+        Season season = seasonRepository.findById(seasonId)
+                .orElseThrow(() -> new RuntimeException("Season not found: " + seasonId));
+
+        // Increment sync version
+        long newVersion = (season.getSyncVersion() != null ? season.getSyncVersion() : 0L) + 1;
+        season.setSyncVersion(newVersion);
+        seasonRepository.saveAndFlush(season);
+
+        log.info("[Checkpoint] Season '{}' synced to version {} at {}",
+                season.getName(), newVersion, season.getUpdatedAt());
+
+        Map<String, Object> checkpoint = Map.of(
+            "seasonId", seasonId,
+            "syncVersion", newVersion,
+            "timestamp", season.getUpdatedAt().toString()
+        );
+
+        // Notify all connected clients
+        messagingTemplate.convertAndSend(
+            "/topic/season/" + seasonId + "/sync",
+            Map.of("type", "SYNC_CHECKPOINT", "data", checkpoint));
+
+        return checkpoint;
+    }
 }
